@@ -1,0 +1,64 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Chettu",
+  "projectDescription": "A command-line tool that generates XML representations of project file structures and content for LLM context and codebase analysis",
+  "theme": "aspen",
+  "primaryColor": "#22c55e",
+  "lightColor": "#4ade80",
+  "darkColor": "#16a34a",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Command Reference",
+        "pages": [
+          "commands/overview",
+          "commands/flags",
+          "commands/examples"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/ignore-patterns",
+          "guides/output-formats",
+          "guides/clipboard-integration",
+          "guides/building-from-source"
+        ]
+      },
+      {
+        "group": "Use Cases",
+        "pages": [
+          "use-cases/llm-context",
+          "use-cases/project-archival",
+          "use-cases/codebase-analysis"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Recursive directory scanning with customizable ignore rules",
+    "XML output containing file tree visualization and complete file contents",
+    "Flexible command-line control for directories, ignore patterns, and output options",
+    "Clipboard integration with configurable size limits",
+    "Safe file handling with overwrite confirmation prompts",
+    "Support for .gitignore and .chettuignore files"
+  ],
+  "publicApiSurface": [
+    "--directory / -d: Directory to scan (repeatable)",
+    "--ignore-line / -l: Pattern to ignore (repeatable)",
+    "--ignore-file / -f: Ignore file to use (repeatable)",
+    "--reset-ignore: Discard default ignore patterns",
+    "--project-name / -n: Set project name in output",
+    "--output-file / -o: Output file path",
+    "--output-file-replace / -R: Force overwrite existing output file",
+    "--copy / -c: Copy to clipboard with max size in bytes"
+  ]
+}
