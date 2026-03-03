@@ -1,0 +1,204 @@
+---
+title: Ignore Patterns
+description: Configure which files and directories Chettu should exclude from the output
+---
+
+Chettu provides flexible ignore pattern configuration to control which files and directories are included in your project snapshot. By default, it respects `.gitignore` files and includes sensible defaults for binary and media files.
+
+## How Ignore Files Work
+
+Chettu automatically reads ignore patterns from two file types:
+
+- **`.gitignore`** - Standard Git ignore file
+- **`.chettuignore`** - Chettu-specific ignore file (uses same syntax as `.gitignore`)
+
+Both files are processed by default and their patterns are combined. The `compileIgnoreInMemory()` function (chettu.go:217-236) reads these files and compiles all patterns into a single ignore matcher.
+
+```go
+func compileIgnoreInMemory(files, lines []string) *ignore.GitIgnore {
+    var patterns []string
+    
+    for _, file := range files {
+        f, err := os.Open(file)
+        if err != nil {
+            continue  // File doesn't exist, skip it
+        }
+        scanner := bufio.NewScanner(f)
+        for scanner.Scan() {
+            patterns = append(patterns, scanner.Text())
+        }
+        f.Close()
+    }
+    
+    patterns = append(patterns, lines...)
+    ignored := ignore.CompileIgnoreLines(patterns...)
+    return ignored
+}
+```
+
+<Note>
+If an ignore file doesn't exist, Chettu silently continues without error. This allows you to use `.chettuignore` only when needed.
+</Note>
+
+## Default Ignore Patterns
+
+Chettu includes built-in ignore patterns to exclude common binary and media files that are rarely useful in project snapshots:
+
+```plaintext
+.git
+*.otf
+*.jpeg, *.jpg, *.png, *.gif, *.bmp, *.tif, *.tiff, *.webp
+*.avif, *.heif, *.heic, *.psd, *.psp
+*.svg, *.ai, *.eps, *.pdf
+*.mp4, *.avi, *.mov, *.wmv, *.mkv, *.flv, *.webm
+*.mpg, *.mpeg, *.3gp, *.ogv, *.m4v
+*.gltf, *.glb, *.obj, *.fbx, *.stl, *.dae, *.usdz
+```
+
+And many more image, video, and 3D model formats. See chettu.go:48 for the complete list.
+
+<Tip>
+The default patterns focus on binary files that would clutter your output without providing useful context to LLMs or code analysis tools.
+</Tip>
+
+## Custom Ignore Patterns with `-l` Flag
+
+Add custom ignore patterns directly from the command line using the `-l` or `--ignore-line` flag:
+
+```bash
+# Ignore all log files
+chettu -l "*.log"
+
+# Ignore multiple patterns
+chettu -l "*.log" -l "dist" -l "node_modules"
+
+# Combine with output file
+chettu -l "*.tmp" -l "build" -o snapshot.xml
+```
+
+Patterns specified with `-l` are **added to** the default ignore patterns, not replacing them.
+
+## Custom Ignore Files with `-f` Flag
+
+Specify additional ignore files using the `-f` or `--ignore-file` flag:
+
+```bash
+# Use a custom ignore file
+chettu -f .myignores
+
+# Use multiple ignore files
+chettu -f .customignore -f .projectignore
+
+# Still processes .gitignore and .chettuignore by default
+chettu -f .extraignores
+```
+
+<Note>
+Custom ignore files specified with `-f` are added to the default `.gitignore` and `.chettuignore` files. All ignore files are processed together.
+</Note>
+
+## Reset Ignore with `--reset-ignore`
+
+To use **only** your custom patterns and ignore files, use the `--reset-ignore` flag to discard all defaults:
+
+```bash
+# Only ignore .git directory (no default patterns)
+chettu --reset-ignore -l ".git"
+
+# Only use custom ignore file
+chettu --reset-ignore -f .myignores
+
+# No ignore patterns at all
+chettu --reset-ignore
+```
+
+<Warning>
+Using `--reset-ignore` without specifying any patterns will include ALL files, including `.git`, images, videos, and other binary files. This may result in very large output files.
+</Warning>
+
+## Pattern Syntax Examples
+
+Chettu uses the [go-gitignore](https://github.com/sabhiram/go-gitignore) library, which supports standard `.gitignore` pattern syntax:
+
+<Steps>
+  <Step title="Simple Patterns">
+    ```bash
+    # Ignore specific file
+    chettu -l "config.local.json"
+    
+    # Ignore all files with extension
+    chettu -l "*.log"
+    ```
+  </Step>
+  
+  <Step title="Directory Patterns">
+    ```bash
+    # Ignore directory and all contents
+    chettu -l "node_modules"
+    
+    # Ignore directory with trailing slash (more explicit)
+    chettu -l "dist/"
+    ```
+  </Step>
+  
+  <Step title="Wildcard Patterns">
+    ```bash
+    # Ignore files in any subdirectory
+    chettu -l "**/temp"
+    
+    # Ignore all .tmp files in any directory
+    chettu -l "**/*.tmp"
+    ```
+  </Step>
+  
+  <Step title="Negation Patterns">
+    Create a `.chettuignore` file:
+    ```plaintext
+    # Ignore all .env files
+    *.env
+    
+    # But keep .env.example
+    !.env.example
+    ```
+  </Step>
+</Steps>
+
+## Common Use Cases
+
+### Exclude Build Artifacts
+
+```bash
+chettu -l "dist" -l "build" -l "*.min.js" -l "*.map"
+```
+
+### Exclude Dependencies
+
+```bash
+chettu -l "node_modules" -l "vendor" -l "__pycache__"
+```
+
+### Only Include Source Code
+
+```bash
+chettu --reset-ignore -l ".git" -l "node_modules" -l "*.md" -d ./src
+```
+
+### Custom Project-Specific Ignores
+
+Create `.chettuignore` in your project root:
+
+```plaintext
+# Chettu-specific ignores
+*.generated.go
+test_fixtures/
+*.snap
+coverage/
+```
+
+Then run Chettu normally:
+
+```bash
+chettu -o snapshot.xml
+```
+
+The `.chettuignore` file will be automatically detected and applied along with `.gitignore` and default patterns.

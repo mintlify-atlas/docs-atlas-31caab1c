@@ -1,0 +1,80 @@
+---
+title: 'Command Overview'
+description: 'Learn how to use the chettu CLI tool to generate XML representations of your project structure'
+---
+
+## Basic Syntax
+
+The basic command syntax for Chettu is:
+
+```bash
+chettu [flags]
+```
+
+All flags are optional, allowing you to customize the scanning behavior, output format, and destination.
+
+## How It Works
+
+Chettu generates a comprehensive XML representation of your project by:
+
+1. **Scanning directories** - Recursively walks through specified directories (defaults to current directory `./`)
+2. **Filtering files** - Applies ignore patterns from `.gitignore`, `.chettuignore`, and custom patterns
+3. **Generating structure** - Creates a tree-view visualization of the file hierarchy
+4. **Collecting content** - Reads and includes the full content of each non-ignored file
+5. **Producing XML** - Outputs structured XML containing both the file tree and file contents
+
+As it scans, Chettu prints each file path to stdout, giving you real-time feedback on what's being processed.
+
+## Default Behavior
+
+When you run `chettu` without any flags:
+
+- **Directory**: Scans the current directory (`./`)
+- **Ignore patterns**: Automatically ignores:
+  - `.git` directory
+  - Files matching patterns in `.gitignore` (if present)
+  - Files matching patterns in `.chettuignore` (if present)
+  - Binary files (images, videos, fonts, etc.)
+- **Output**: Copies XML to clipboard (up to 50,000 characters)
+- **Project name**: No project name is set
+
+<Note>
+The default behavior copies output to your clipboard for easy pasting into LLM conversations or other tools.
+</Note>
+
+## Common Use Cases
+
+### Quick project snapshot
+```bash
+chettu
+```
+Scans current directory and copies output to clipboard.
+
+### Save to file
+```bash
+chettu -o project.xml
+```
+Generates XML and saves to `project.xml` with overwrite confirmation.
+
+### Scan specific directories
+```bash
+chettu -d ./src -d ./docs
+```
+Scans only the `src` and `docs` directories.
+
+### Add custom ignore patterns
+```bash
+chettu -l "*.log" -l "node_modules"
+```
+Ignores log files and node_modules in addition to defaults.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Flag Reference" icon="flag" href="/commands/flags">
+    Complete reference for all available command-line flags
+  </Card>
+  <Card title="Usage Examples" icon="code" href="/commands/examples">
+    Real-world examples showing common workflows
+  </Card>
+</CardGroup>

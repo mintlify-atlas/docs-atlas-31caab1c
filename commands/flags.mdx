@@ -1,0 +1,169 @@
+---
+title: 'Flag Reference'
+description: 'Complete reference for all Chettu command-line flags'
+---
+
+## Directory Selection
+
+<ParamField path="--directory" type="string[]" default="./">
+  Directory to scan for files. This flag is **repeatable** - you can specify multiple directories to scan in a single run.
+  
+  **Short form**: `-d`
+  
+  ```bash
+  # Single directory
+  chettu -d ./src
+  
+  # Multiple directories
+  chettu -d ./src -d ./docs -d ./config
+  ```
+</ParamField>
+
+## Ignore Patterns
+
+<ParamField path="--ignore-line" type="string[]" default=".git + binary/media extensions">
+  Add custom ignore patterns. This flag is **repeatable** - you can specify multiple patterns. Patterns follow gitignore syntax.
+  
+  **Short form**: `-l`
+  
+  **Default patterns include**:
+  - `.git` directory
+  - Image files: `*.png`, `*.jpg`, `*.jpeg`, `*.gif`, `*.svg`, `*.ico`, etc.
+  - Video files: `*.mp4`, `*.avi`, `*.mov`, `*.mkv`, etc.
+  - Font files: `*.otf`, `*.ttf`, `*.woff`, etc.
+  - Other binary formats: `*.pdf`, `*.psd`, etc.
+  
+  ```bash
+  # Ignore log files
+  chettu -l "*.log"
+  
+  # Ignore multiple patterns
+  chettu -l "*.log" -l "dist" -l "node_modules"
+  ```
+  
+  <Note>
+  Patterns specified with `-l` are **appended** to the default ignore list unless `--reset-ignore` is used.
+  </Note>
+</ParamField>
+
+<ParamField path="--ignore-file" type="string[]" default='[".gitignore", ".chettuignore"]'>
+  Specify ignore files to read patterns from. This flag is **repeatable** - you can specify multiple ignore files.
+  
+  **Short form**: `-f`
+  
+  ```bash
+  # Use custom ignore file
+  chettu -f .myignore
+  
+  # Use multiple ignore files
+  chettu -f .gitignore -f .chettuignore -f .customignore
+  ```
+  
+  <Note>
+  Ignore files specified with `-f` are **appended** to the default list unless `--reset-ignore` is used.
+  </Note>
+</ParamField>
+
+<ParamField path="--reset-ignore" type="boolean" default="false">
+  Discard all default ignore patterns and files before applying custom ones. Use this when you want complete control over what gets ignored.
+  
+  ```bash
+  # Only ignore what you specify
+  chettu --reset-ignore -l "*.tmp" -l "vendor"
+  
+  # Start fresh with custom ignore file
+  chettu --reset-ignore -f .myignore
+  ```
+  
+  <Warning>
+  Using `--reset-ignore` will include `.git` directories and binary files unless you explicitly ignore them.
+  </Warning>
+</ParamField>
+
+## Project Configuration
+
+<ParamField path="--project-name" type="string" default='"" (empty)'>
+  Set a project name that appears in the XML output as the `project_name` attribute.
+  
+  **Short form**: `-n`
+  
+  ```bash
+  chettu -n "My Awesome Project"
+  ```
+  
+  This produces:
+  ```xml
+  <project project_name="My Awesome Project">
+    <!-- file tree and content -->
+  </project>
+  ```
+</ParamField>
+
+## Output Options
+
+<ParamField path="--output-file" type="string" default='"" (no file output)'>
+  Specify the path where the XML output should be written. If not specified, output is only copied to clipboard.
+  
+  **Short form**: `-o`
+  
+  ```bash
+  # Write to file in current directory
+  chettu -o project.xml
+  
+  # Write to specific path
+  chettu -o /tmp/snapshots/project-2024-01-15.xml
+  ```
+  
+  <Note>
+  If the file already exists, Chettu will prompt for confirmation before overwriting (unless `-R` is used).
+  </Note>
+</ParamField>
+
+<ParamField path="--output-file-replace" type="boolean" default="false">
+  Force replacement of existing output file without confirmation prompt. **Requires** the `-o` flag to be specified.
+  
+  **Short form**: `-R`
+  
+  ```bash
+  # Force overwrite without prompt
+  chettu -o project.xml -R
+  ```
+  
+  <Warning>
+  Using `-R` without `-o` will produce an error: "The -R (force replace) flag requires the -o (output file) flag to be specified."
+  </Warning>
+</ParamField>
+
+<ParamField path="--copy" type="integer" default="50000">
+  Enable clipboard copy with maximum size in characters. Set to 0 to disable clipboard functionality.
+  
+  **Short form**: `-c`
+  
+  ```bash
+  # Increase clipboard limit to 200KB
+  chettu -c 200000
+  
+  # Disable clipboard copy
+  chettu -c 0 -o output.xml
+  
+  # Use default limit (50,000 characters)
+  chettu
+  ```
+  
+  <Note>
+  If the output exceeds the specified size, Chettu will print an error message but will still write to file if `-o` is specified.
+  </Note>
+</ParamField>
+
+## Flag Summary Table
+
+| Flag | Short | Type | Repeatable | Default |
+|------|-------|------|------------|----------|
+| `--directory` | `-d` | string | Yes | `./` |
+| `--ignore-line` | `-l` | string | Yes | `.git` + binary/media extensions |
+| `--ignore-file` | `-f` | string | Yes | `[".gitignore", ".chettuignore"]` |
+| `--reset-ignore` | | boolean | No | `false` |
+| `--project-name` | `-n` | string | No | `""` (empty) |
+| `--output-file` | `-o` | string | No | `""` (no file) |
+| `--output-file-replace` | `-R` | boolean | No | `false` |
+| `--copy` | `-c` | integer | No | `50000` |

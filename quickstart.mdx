@@ -1,80 +1,213 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get started with Chettu in minutes
 ---
 
-## Get started in three steps
+# Quick Start
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through the basic usage of Chettu.
 
-### Step 1: Set up your local environment
+## Basic Usage
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Scan your current directory">
+    The simplest way to use Chettu is to run it without any arguments:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    chettu
+    ```
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    This will:
+    - Scan the current directory recursively
+    - Respect `.gitignore` and `.chettuignore` files
+    - Print file paths to stdout as they're processed
+    - Copy the XML output to your clipboard (up to 50KB)
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+    <Note>
+    Chettu automatically ignores common binary and media file types (images, videos, fonts, etc.) to keep output focused on source code and documentation.
+    </Note>
+  </Step>
+
+  <Step title="Save output to a file">
+    To save the XML output to a file, use the `-o` flag:
+    
+    ```bash
+    chettu -o project.xml
+    ```
+    
+    If the file already exists, Chettu will prompt you for confirmation before overwriting:
+    
+    ```
+    File project.xml already exists. Overwrite? (y/N):
+    ```
+    
+    <Tip>
+    Use the `-R` flag to force overwrite without confirmation:
+    ```bash
+    chettu -o project.xml -R
+    ```
+    </Tip>
+  </Step>
+
+  <Step title="Scan a specific directory">
+    To scan a directory other than the current one, use the `-d` flag:
+    
+    ```bash
+    chettu -d /path/to/project -o output.xml
+    ```
+    
+    You can also scan multiple directories at once:
+    
+    ```bash
+    chettu -d ./src -d ./docs -o combined.xml
+    ```
+  </Step>
+</Steps>
+
+## Understanding the Output
+
+Chettu generates XML with three main sections:
+
+### 1. Project Name (Optional)
+
+Set with the `-n` flag:
+
+```bash
+chettu -n "My Awesome Project" -o project.xml
+```
+
+```xml
+<project>
+    <project_name>My Awesome Project</project_name>
+    ...
+</project>
+```
+
+### 2. Source Tree
+
+A visual representation of your file structure:
+
+```xml
+<source_tree>
+    .
+    ├── README.md
+    ├── src
+    │   ├── main.go
+    │   └── utils.go
+    └── docs
+        └── guide.md
+</source_tree>
+```
+
+### 3. File Contents
+
+Each file's complete content with its path:
+
+```xml
+<files>
+    <file path="README.md">
+        # My Project
+        This is the main README file.
+    </file>
+    <file path="src/main.go">
+        package main
+
+        import "fmt"
+
+        func main() {
+            fmt.Println("Hello, World!")
+        }
+    </file>
+</files>
+```
+
+## Common Use Cases
+
+<Accordion title="Provide context to an LLM">
+  Generate a complete project snapshot and paste it into your LLM conversation:
+  
+  ```bash
+  chettu -n "My Project" -d ./src
+  ```
+  
+  The output is automatically copied to your clipboard. Just paste it into ChatGPT, Claude, or any other LLM interface.
 </Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
+<Accordion title="Archive a specific project state">
+  Create a timestamped snapshot:
+  
+  ```bash
+  chettu -n "My Project v1.0" -o "snapshot-$(date +%Y%m%d).xml"
+  ```
 </Accordion>
 
-## Next steps
+<Accordion title="Scan with custom ignore patterns">
+  Ignore additional files or directories:
+  
+  ```bash
+  chettu -l "*.log" -l "dist" -l "node_modules" -o project.xml
+  ```
+  
+  Or use a custom ignore file:
+  
+  ```bash
+  chettu -f .my_custom_ignores -o project.xml
+  ```
+</Accordion>
 
-Now that you have your docs running, explore these key features:
+<Accordion title="Analyze only specific file types">
+  Reset default ignores and specify only what you want:
+  
+  ```bash
+  chettu --reset-ignore -l "*.md" -l "*.txt" -o docs-only.xml
+  ```
+</Accordion>
+
+## Advanced Options
+
+### Clipboard Size Limit
+
+Control the maximum size copied to clipboard (in bytes):
+
+```bash
+# Allow up to 200KB
+chettu -c 200000 -o project.xml
+
+# Disable clipboard copying
+chettu -c 0 -o project.xml
+```
+
+### Force File Overwrite
+
+Skip the confirmation prompt when overwriting existing files:
+
+```bash
+chettu -o project.xml -R
+```
+
+<Warning>
+Use `-R` with caution as it will overwrite files without asking.
+</Warning>
+
+### Combine Multiple Options
+
+Chettu supports combining multiple flags:
+
+```bash
+chettu -n "My Project" \
+       -d /path/to/project \
+       -l "*.log" \
+       -o output.xml \
+       -c 200000
+```
+
+## Next Steps
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Command Reference" icon="terminal" href="/commands/flags">
+    Explore all available command-line flags and options
+  </Card>
+  <Card title="Ignore Patterns" icon="filter" href="/guides/ignore-patterns">
+    Learn about ignore files and advanced configuration
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

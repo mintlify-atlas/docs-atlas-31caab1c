@@ -1,0 +1,189 @@
+---
+title: 'LLM Context'
+description: 'Provide comprehensive codebase context to AI assistants'
+---
+
+## Why Provide Codebase Context to LLMs
+
+When working with AI assistants like ChatGPT or Claude on coding tasks, providing full project context significantly improves the quality of responses. Instead of pasting individual files or describing your codebase structure manually, Chettu generates a single XML document containing:
+
+- Complete project file tree visualization
+- Full content of all relevant files
+- Organized structure that's easy for LLMs to parse
+
+## How Chettu's XML Format Helps
+
+Chettu's XML output is specifically designed for LLM consumption:
+
+```xml
+<project>
+    <project_name>My Awesome Project</project_name>
+    <source_tree>
+        .
+        ├── README.md
+        ├── src
+        │   └── main.go
+        └── docs
+            └── guide.md
+    </source_tree>
+    <files>
+        <file path="README.md">
+            # My Project
+            This is the main README file.
+        </file>
+        <file path="src/main.go">
+            package main
+            // ... full content
+        </file>
+    </files>
+</project>
+```
+
+This format provides both **structure** (the file tree) and **content** (actual file contents) in a single, well-organized document that LLMs can easily understand.
+
+## Example Workflow
+
+<Steps>
+  <Step title="Generate XML for your project">
+    Run Chettu in your project directory:
+    
+    ```bash
+    chettu -n "My Project"
+    ```
+    
+    The output is automatically copied to your clipboard (up to 50KB by default).
+  </Step>
+
+  <Step title="Paste into your AI assistant">
+    Open ChatGPT, Claude, or your preferred AI assistant and paste the XML directly into your conversation.
+  </Step>
+
+  <Step title="Ask context-aware questions">
+    Now you can ask questions like:
+    - "How is authentication handled in this codebase?"
+    - "Can you refactor the user service to use dependency injection?"
+    - "What's the overall architecture of this project?"
+    
+    The AI has complete context to provide accurate, project-specific answers.
+  </Step>
+</Steps>
+
+## Clipboard Integration
+
+Chettu automatically copies output to your clipboard for easy pasting:
+
+```bash
+# Default: copy if under 50KB
+chettu
+
+# Increase clipboard size limit to 200KB
+chettu -c 200000
+
+# Disable clipboard (output to stdout only)
+chettu -c 0
+```
+
+<Note>
+The `-c` flag sets the maximum size in **bytes**. If your output exceeds this limit, it won't be copied to clipboard but will still display in your terminal.
+</Note>
+
+## Size Considerations
+
+<Warning>
+Large projects can generate XML files that exceed LLM context windows (typically 100K-200K tokens).
+</Warning>
+
+To manage output size:
+
+### Check output size first
+
+```bash
+# Save to file and check size
+chettu -o project.xml
+ls -lh project.xml
+```
+
+### Use selective directory scanning
+
+Instead of scanning your entire project, target specific directories:
+
+```bash
+# Only scan src and docs directories
+chettu -d ./src -d ./docs -n "My Project"
+
+# Scan multiple related directories
+chettu -d ./api -d ./models -d ./controllers
+```
+
+### Add custom ignore patterns
+
+Exclude unnecessary files to reduce output size:
+
+```bash
+# Ignore test files and generated code
+chettu -l "*_test.go" -l "*.gen.go" -l "mock_*"
+
+# Ignore entire directories
+chettu -l "vendor" -l "node_modules" -l "dist"
+```
+
+## Best Practices for Large Codebases
+
+<CardGroup cols={2}>
+  <Card title="Focus on relevant modules" icon="bullseye">
+    Only include directories related to your current task:
+    ```bash
+    chettu -d ./auth -d ./middleware
+    ```
+  </Card>
+
+  <Card title="Create multiple snapshots" icon="layer-group">
+    Generate different XML files for different subsystems:
+    ```bash
+    chettu -d ./frontend -o frontend.xml -n "Frontend"
+    chettu -d ./backend -o backend.xml -n "Backend"
+    ```
+  </Card>
+
+  <Card title="Use .chettuignore" icon="filter">
+    Create a `.chettuignore` file in your project root to permanently exclude files:
+    ```
+    # .chettuignore
+    *_test.go
+    *.gen.go
+    vendor/
+    tmp/
+    ```
+  </Card>
+
+  <Card title="Leverage gitignore" icon="git-alt">
+    Chettu automatically respects `.gitignore`, so most build artifacts and dependencies are already excluded.
+  </Card>
+</CardGroup>
+
+## Example: Context for Code Review
+
+```bash
+# Generate context for reviewing authentication changes
+chettu -d ./auth -d ./middleware -d ./models \
+  -n "Auth System" \
+  -l "*_test.go" \
+  -o auth_review.xml
+```
+
+Then ask your AI assistant:
+> "Review this authentication system for security vulnerabilities and suggest improvements."
+
+<Tip>
+Include relevant test files when asking for test coverage analysis or test improvements. Remove the `-l "*_test.go"` ignore pattern in those cases.
+</Tip>
+
+## Output Format Reference
+
+The generated XML contains:
+
+- **`<project_name>`** - Project identifier (set with `-n` flag)
+- **`<source_tree>`** - Visual tree representation of file structure
+- **`<files>`** - Collection of `<file>` elements with `path` attribute and full content
+
+This dual structure gives LLMs both the big picture (tree) and detailed implementation (file contents).

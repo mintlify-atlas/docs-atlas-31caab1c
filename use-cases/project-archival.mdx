@@ -1,0 +1,256 @@
+---
+title: 'Project Archival'
+description: 'Snapshot and preserve project states for documentation and version control'
+---
+
+## Snapshot Entire Project State
+
+Chettu creates a comprehensive snapshot of your project in a single XML file, capturing:
+
+- Complete directory structure
+- All file contents
+- Project metadata (name, timestamp via filename)
+- Current state of the codebase
+
+This single-file format is perfect for archiving project states at important milestones.
+
+## Use Cases for Archival
+
+<CardGroup cols={2}>
+  <Card title="Before Major Refactors" icon="code-branch">
+    Capture the working state before significant changes:
+    ```bash
+    chettu -n "Pre-Refactor State" \
+      -o snapshots/before_auth_refactor.xml
+    ```
+  </Card>
+
+  <Card title="Release Snapshots" icon="tag">
+    Archive the exact codebase for each release:
+    ```bash
+    chettu -n "v1.2.0 Release" \
+      -o archives/release_v1.2.0.xml
+    ```
+  </Card>
+
+  <Card title="Documentation" icon="book">
+    Provide complete code context in documentation:
+    ```bash
+    chettu -n "Tutorial Project" \
+      -o docs/complete_example.xml
+    ```
+  </Card>
+
+  <Card title="Handoff & Knowledge Transfer" icon="people-arrows">
+    Share complete project structure with new team members:
+    ```bash
+    chettu -n "Project Onboarding" \
+      -o onboarding/codebase_snapshot.xml
+    ```
+  </Card>
+</CardGroup>
+
+## Version Control Integration
+
+While Chettu respects `.gitignore` by default, you can integrate snapshots into your version control workflow:
+
+### Track Major Milestones
+
+```bash
+# Create snapshots directory
+mkdir -p project_snapshots
+
+# Generate snapshot before major change
+chettu -n "Before Microservices Migration" \
+  -o project_snapshots/pre_microservices.xml
+
+# Commit the snapshot
+git add project_snapshots/pre_microservices.xml
+git commit -m "Archive: snapshot before microservices migration"
+```
+
+<Note>
+XML snapshots can be large. Consider using [Git LFS](https://git-lfs.github.com/) for storing snapshot files, or keep them outside version control.
+</Note>
+
+### Tag-Based Archival
+
+Create snapshots at each git tag:
+
+```bash
+# After creating a release tag
+git tag v1.0.0
+
+# Generate snapshot for this release
+chettu -n "Release v1.0.0" \
+  -o archives/snapshot_v1.0.0.xml
+```
+
+## Documentation Purposes
+
+Chettu snapshots serve as living documentation:
+
+### Code Examples in Tutorials
+
+```bash
+# Capture example project for tutorial
+chettu -d ./examples/getting-started \
+  -n "Getting Started Example" \
+  -o docs/examples/getting_started.xml
+```
+
+Users can explore the complete example codebase in a single file.
+
+### Architecture Documentation
+
+```bash
+# Snapshot showing current architecture
+chettu -n "Current Architecture (2026-03)" \
+  -l "*_test.go" \
+  -l "vendor" \
+  -o docs/architecture/current_state.xml
+```
+
+Include this snapshot in architecture documentation to show real implementation.
+
+## Sharing Project Structure with Team
+
+<Steps>
+  <Step title="Generate team-focused snapshot">
+    Create a clean snapshot without test files and generated code:
+    
+    ```bash
+    chettu -n "Team Codebase Review" \
+      -l "*_test.go" \
+      -l "*.gen.go" \
+      -l "mock_*" \
+      -o team_review.xml
+    ```
+  </Step>
+
+  <Step title="Share via your preferred method">
+    - Email attachment
+    - Slack/Teams file upload
+    - Shared drive (Google Drive, Dropbox)
+    - Internal wiki/documentation platform
+  </Step>
+
+  <Step title="Team members explore structure">
+    Team members can:
+    - View complete file tree structure
+    - Search for specific implementations
+    - Understand project organization
+    - Use with AI assistants for questions
+  </Step>
+</Steps>
+
+## Example: Archiving Before Major Refactor
+
+Here's a complete workflow for archiving before a major refactoring:
+
+```bash
+# 1. Create archives directory
+mkdir -p archives/refactors
+
+# 2. Generate snapshot with descriptive name
+chettu -n "Before Auth System Refactor" \
+  -o archives/refactors/$(date +%Y%m%d)_before_auth_refactor.xml
+
+# 3. Optionally commit to version control
+git add archives/refactors/
+git commit -m "Archive: snapshot before auth refactor"
+
+# 4. Proceed with refactor confidently
+# You can always reference the old implementation
+```
+
+<Tip>
+Include the date in snapshot filenames using `$(date +%Y%m%d)` for easy chronological sorting.
+</Tip>
+
+## Using the -n Flag for Named Snapshots
+
+The `-n` (project name) flag adds context to your snapshots:
+
+```bash
+# Without name - generic output
+chettu -o snapshot.xml
+# Output: <project>...</project>
+
+# With name - descriptive context
+chettu -n "E-Commerce Backend v2.1" -o snapshot.xml
+# Output: <project><project_name>E-Commerce Backend v2.1</project_name>...</project>
+```
+
+Best practices for naming:
+
+- **Include version**: `"App Name v1.2.0"`
+- **Include date**: `"Project Name - 2026-03-03"`
+- **Include purpose**: `"Before Database Migration"`
+- **Include context**: `"Production Snapshot - Critical Bug"`
+
+## Organizing Snapshots
+
+Create a structured archive directory:
+
+```
+project_root/
+├── archives/
+│   ├── releases/
+│   │   ├── snapshot_v1.0.0.xml
+│   │   ├── snapshot_v1.1.0.xml
+│   │   └── snapshot_v2.0.0.xml
+│   ├── refactors/
+│   │   ├── 20260101_before_auth_refactor.xml
+│   │   └── 20260215_before_db_migration.xml
+│   └── milestones/
+│       ├── mvp_launch.xml
+│       └── beta_release.xml
+```
+
+Generate snapshots into appropriate subdirectories:
+
+```bash
+# Release snapshot
+chettu -n "Release v2.0.0" -o archives/releases/snapshot_v2.0.0.xml
+
+# Milestone snapshot
+chettu -n "Beta Release" -o archives/milestones/beta_release.xml
+```
+
+## Comparing Snapshots
+
+While Chettu doesn't have built-in diff functionality, you can use standard tools:
+
+```bash
+# Compare two snapshots
+diff archives/releases/snapshot_v1.0.0.xml \
+     archives/releases/snapshot_v2.0.0.xml
+
+# Or use a visual diff tool
+code --diff archives/before.xml archives/after.xml
+```
+
+<Warning>
+XML diffs can be verbose. For detailed code comparisons, use git diff on the actual repository instead.
+</Warning>
+
+## Snapshot Size Management
+
+For long-term archival, manage snapshot sizes:
+
+```bash
+# Compress snapshots
+gzip archives/releases/snapshot_v1.0.0.xml
+# Creates: snapshot_v1.0.0.xml.gz
+
+# View compressed size
+ls -lh archives/releases/*.gz
+
+# Extract when needed
+gunzip archives/releases/snapshot_v1.0.0.xml.gz
+```
+
+<Tip>
+XML files compress very well (often 90%+ reduction) due to repetitive structure and text content.
+</Tip>

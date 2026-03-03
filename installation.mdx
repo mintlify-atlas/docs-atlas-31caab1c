@@ -1,0 +1,90 @@
+---
+title: Installation
+description: Install Chettu using Go or build from source
+---
+
+# Installation
+
+Chettu requires Go 1.16 or higher to install or build from source.
+
+## Install via Go
+
+The simplest way to install Chettu is using `go install`:
+
+```bash
+go install github.com/saharshxyz/chettu@latest
+```
+
+This will download and install the latest version of Chettu to your `$GOPATH/bin` directory.
+
+<Note>
+Make sure `$GOPATH/bin` is in your `PATH` environment variable so you can run `chettu` from anywhere.
+</Note>
+
+## Building from Source
+
+If you prefer to build from source or want to contribute to development:
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/saharshxyz/chettu.git
+    cd chettu
+    ```
+  </Step>
+
+  <Step title="Build the binary">
+    ```bash
+    go build -o chettu .
+    ```
+    
+    This creates a `chettu` executable in the current directory.
+  </Step>
+
+  <Step title="Test the build (optional)">
+    ```bash
+    ./chettu -o output.xml
+    ```
+    
+    This will generate an XML file of the Chettu project itself.
+  </Step>
+
+  <Step title="Move to PATH (optional)">
+    Move the binary to a directory in your PATH for system-wide access:
+    
+    ```bash
+    # Example for Unix-like systems
+    sudo mv chettu /usr/local/bin/
+    ```
+  </Step>
+</Steps>
+
+## Verify Installation
+
+Confirm that Chettu is installed correctly:
+
+```bash
+chettu --help
+```
+
+You should see the help output with all available flags and options.
+
+<Tip>
+Run `chettu` without any flags to scan the current directory and copy the output to your clipboard.
+</Tip>
+
+## Dependencies
+
+Chettu uses the following Go packages:
+
+- [github.com/spf13/pflag](https://github.com/spf13/pflag) - POSIX/GNU-style command-line flags
+- [github.com/sabhiram/go-gitignore](https://github.com/sabhiram/go-gitignore) - Gitignore pattern matching
+- [golang.design/x/clipboard](https://pkg.go.dev/golang.design/x/clipboard) - Cross-platform clipboard access
+
+These are automatically installed when using `go install` or `go build`.
+
+## Next Steps
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Learn how to use Chettu with a quick tutorial
+</Card>

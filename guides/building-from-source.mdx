@@ -1,0 +1,341 @@
+---
+title: Building from Source
+description: Build and install Chettu from source code
+---
+
+Building Chettu from source allows you to customize the tool, contribute to development, or install it on systems where pre-built binaries aren't available.
+
+## Prerequisites
+
+Before building Chettu, ensure you have Go installed:
+
+### Go Installation
+
+Chettu requires **Go 1.24 or later**.
+
+<Steps>
+  <Step title="Check Existing Installation">
+    ```bash
+    go version
+    # go version go1.24.4 linux/amd64
+    ```
+    
+    If you see version 1.24+, you're ready to build.
+  </Step>
+  
+  <Step title="Install Go (if needed)">
+    Download from [golang.org/dl](https://golang.org/dl/):
+    
+    **Linux/macOS:**
+    ```bash
+    wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
+    sudo rm -rf /usr/local/go
+    sudo tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz
+    export PATH=$PATH:/usr/local/go/bin
+    ```
+    
+    **macOS (Homebrew):**
+    ```bash
+    brew install go
+    ```
+    
+    **Windows:**
+    Download and run the MSI installer from [golang.org/dl](https://golang.org/dl/)
+  </Step>
+  
+  <Step title="Verify Installation">
+    ```bash
+    go version
+    ```
+  </Step>
+</Steps>
+
+<Note>
+The `go.mod` file specifies `go 1.24` with toolchain `go1.24.4`. Older versions may not work correctly.
+</Note>
+
+## Clone Repository
+
+Clone the Chettu repository from GitHub:
+
+```bash
+git clone https://github.com/saharshxyz/chettu.git
+cd chettu
+```
+
+<Tip>
+If you plan to contribute, fork the repository first and clone your fork instead.
+</Tip>
+
+## Build Command
+
+Build the executable using the Go compiler:
+
+```bash
+go build -o chettu .
+```
+
+This creates a `chettu` binary (or `chettu.exe` on Windows) in the current directory.
+
+### Build Flags
+
+Customize the build with additional flags:
+
+```bash
+# Optimized production build (smaller binary)
+go build -ldflags="-s -w" -o chettu .
+
+# Build for specific platform
+GOOS=linux GOARCH=amd64 go build -o chettu-linux .
+GOOS=darwin GOARCH=arm64 go build -o chettu-macos-arm .
+GOOS=windows GOARCH=amd64 go build -o chettu.exe .
+
+# Build with version info
+go build -ldflags="-X main.version=1.0.0" -o chettu .
+```
+
+<AccordionGroup>
+  <Accordion title="Build Flag Explanations">
+    - `-o chettu`: Specify output binary name
+    - `-ldflags="-s -w"`: Strip debug info and symbol table (smaller binary)
+    - `GOOS`: Target operating system (linux, darwin, windows)
+    - `GOARCH`: Target architecture (amd64, arm64, 386)
+    - `-X main.version`: Set version variable at build time
+  </Accordion>
+</AccordionGroup>
+
+## Testing the Build
+
+Verify your build works correctly:
+
+```bash
+# Test basic functionality
+./chettu -o output.xml
+
+# Check the output
+cat output.xml
+
+# Test with custom flags
+./chettu -n "Test Project" -l "*.xml" -o test.xml
+
+# Clean up
+rm output.xml test.xml
+```
+
+If you see the expected XML output and no errors, your build is successful!
+
+<Tip>
+Run `./chettu -h` to see all available flags and verify the help text displays correctly.
+</Tip>
+
+## Dependencies
+
+Chettu uses the following Go dependencies (from `go.mod`):
+
+### Direct Dependencies
+
+```go
+require (
+    github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
+    github.com/spf13/pflag v1.0.5
+    golang.design/x/clipboard v0.7.1
+)
+```
+
+- **[go-gitignore](https://github.com/sabhiram/go-gitignore)**: Parses `.gitignore` patterns
+- **[pflag](https://github.com/spf13/pflag)**: POSIX-style command-line flag parsing
+- **[clipboard](https://pkg.go.dev/golang.design/x/clipboard)**: Cross-platform clipboard access
+
+### Indirect Dependencies
+
+```go
+require (
+    golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
+    golang.org/x/image v0.28.0 // indirect
+    golang.org/x/mobile v0.0.0-20250606033058-a2a15c67f36f // indirect
+    golang.org/x/sys v0.33.0 // indirect
+)
+```
+
+These are pulled in by the clipboard library for platform-specific functionality.
+
+<Note>
+Go automatically downloads all dependencies when you run `go build`. You don't need to install them manually.
+</Note>
+
+## Installation
+
+After building, install Chettu system-wide:
+
+<Steps>
+  <Step title="Install to GOPATH">
+    The easiest method if you have `$GOPATH/bin` in your `$PATH`:
+    ```bash
+    go install github.com/saharshxyz/chettu@latest
+    ```
+    
+    Or from the cloned repository:
+    ```bash
+    go install .
+    ```
+  </Step>
+  
+  <Step title="Install to System Directory">
+    **Linux/macOS:**
+    ```bash
+    sudo cp chettu /usr/local/bin/
+    sudo chmod +x /usr/local/bin/chettu
+    ```
+    
+    **macOS (Homebrew path):**
+    ```bash
+    cp chettu /opt/homebrew/bin/
+    ```
+  </Step>
+  
+  <Step title="Verify Installation">
+    ```bash
+    which chettu
+    # /usr/local/bin/chettu
+    
+    chettu -h
+    # Usage information should appear
+    ```
+  </Step>
+</Steps>
+
+### Windows Installation
+
+On Windows, add the directory containing `chettu.exe` to your PATH:
+
+1. Build the executable:
+   ```bash
+   go build -o chettu.exe .
+   ```
+
+2. Move to a permanent location:
+   ```bash
+   mkdir C:\Program Files\Chettu
+   move chettu.exe "C:\Program Files\Chettu\"
+   ```
+
+3. Add to PATH:
+   - Open "Environment Variables" in System Properties
+   - Edit the "Path" variable
+   - Add `C:\Program Files\Chettu`
+   - Click OK
+
+4. Open a new terminal and verify:
+   ```bash
+   chettu -h
+   ```
+
+## Development Setup
+
+For active development:
+
+```bash
+# Clone repository
+git clone https://github.com/saharshxyz/chettu.git
+cd chettu
+
+# Install dependencies
+go mod download
+
+# Build during development (fast)
+go build -o chettu .
+
+# Run without building
+go run . -o test.xml
+
+# Run tests (if available)
+go test ./...
+
+# Format code
+go fmt ./...
+
+# Lint (requires golangci-lint)
+golangci-lint run
+```
+
+<Tip>
+Use `go run .` during development to skip the build step and run directly from source.
+</Tip>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Build Error: 'go: go.mod file not found'">
+    You're not in the repository directory. Run:
+    ```bash
+    cd chettu
+    go build -o chettu .
+    ```
+  </Accordion>
+  
+  <Accordion title="Build Error: 'package X is not in GOROOT'">
+    Dependencies aren't downloaded. Run:
+    ```bash
+    go mod download
+    go build -o chettu .
+    ```
+  </Accordion>
+  
+  <Accordion title="Runtime Error: 'clipboard init failed' (Linux)">
+    Install X11 development libraries:
+    ```bash
+    sudo apt-get install xorg-dev libx11-dev
+    ```
+    
+    Then rebuild:
+    ```bash
+    go build -o chettu .
+    ```
+  </Accordion>
+  
+  <Accordion title="Permission Denied When Running">
+    Make the binary executable:
+    ```bash
+    chmod +x chettu
+    ./chettu -h
+    ```
+  </Accordion>
+  
+  <Accordion title="'chettu: command not found' After Install">
+    The installation directory isn't in your PATH. Add it:
+    
+    ```bash
+    # For ~/.bashrc or ~/.zshrc
+    export PATH=$PATH:$GOPATH/bin
+    
+    # Or move to system directory
+    sudo cp chettu /usr/local/bin/
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Building from Source (README Example)
+
+From the official README.md (lines 34-41):
+
+```shell
+git clone https://github.com/saharshxyz/chettu.git
+cd chettu
+go build -o chettu .
+./chettu -o output.xml
+```
+
+This is the minimal build process. Follow the expanded instructions above for production builds, installation, and troubleshooting.
+
+## Next Steps
+
+After building successfully:
+
+- Read the [Installation](/installation) guide for system-wide setup
+- Learn about [Ignore Patterns](/guides/ignore-patterns)
+- Check out [Output Formats](/guides/output-formats)
+- View all [Command Flags](/commands/flags)
+
+<Card title="Contributing" icon="code-pull-request" href="https://github.com/saharshxyz/chettu">
+  Built Chettu successfully? Consider contributing improvements or reporting issues on GitHub.
+</Card>

@@ -1,0 +1,465 @@
+---
+title: 'Codebase Analysis'
+description: 'Programmatically parse and analyze project structure with XML'
+---
+
+## XML Format Enables Programmatic Parsing
+
+Chettu's XML output format makes it ideal for programmatic analysis. The structured format allows you to:
+
+- Parse project structure with standard XML libraries
+- Extract metrics and statistics
+- Generate custom documentation
+- Automate code reviews
+- Build compliance and audit tools
+- Integrate with other development tools
+
+## XML Structure Overview
+
+Chettu generates well-formed XML with a predictable structure:
+
+```xml
+<project>
+    <project_name>Your Project Name</project_name>
+    <source_tree>
+        <!-- Text representation of file tree -->
+    </source_tree>
+    <files>
+        <file path="relative/path/to/file.ext">
+            <!-- Indented file content -->
+        </file>
+        <!-- More file elements -->
+    </files>
+</project>
+```
+
+This structure is easy to parse in any programming language.
+
+## Analyze Project Structure
+
+### Example: Count Files by Extension (Python)
+
+```python
+import xml.etree.ElementTree as ET
+from collections import Counter
+import os
+
+# Parse Chettu XML output
+tree = ET.parse('project_snapshot.xml')
+root = tree.getroot()
+
+# Extract all file paths
+files = root.findall('.//file')
+file_paths = [f.get('path') for f in files]
+
+# Count by extension
+extensions = [os.path.splitext(path)[1] for path in file_paths]
+ext_counts = Counter(extensions)
+
+print("File count by extension:")
+for ext, count in ext_counts.most_common():
+    print(f"{ext or '(no extension)'}: {count}")
+```
+
+Output:
+```
+File count by extension:
+.go: 45
+.md: 12
+.yaml: 8
+.json: 5
+```
+
+### Example: Extract Directory Structure (JavaScript)
+
+```javascript
+const fs = require('fs');
+const { parseString } = require('xml2js');
+
+// Read and parse XML
+const xml = fs.readFileSync('project_snapshot.xml', 'utf8');
+
+parseString(xml, (err, result) => {
+  const files = result.project.files[0].file;
+  
+  // Extract unique directories
+  const dirs = new Set();
+  files.forEach(file => {
+    const path = file.$.path;
+    const dir = path.substring(0, path.lastIndexOf('/'));
+    if (dir) dirs.add(dir);
+  });
+  
+  console.log('Directories in project:');
+  Array.from(dirs).sort().forEach(dir => console.log(dir));
+});
+```
+
+## Generate Documentation
+
+Use Chettu output to automatically generate documentation:
+
+### Example: API Endpoint Inventory
+
+```python
+import xml.etree.ElementTree as ET
+import re
+
+tree = ET.parse('project_snapshot.xml')
+root = tree.getroot()
+
+# Find all route definitions in Go files
+endpoints = []
+
+for file in root.findall('.//file'):
+    path = file.get('path')
+    if 'routes' in path and path.endswith('.go'):
+        content = file.text or ''
+        # Simple regex to find route definitions
+        routes = re.findall(r'router\.(GET|POST|PUT|DELETE)\("([^"]+)"', content)
+        for method, route in routes:
+            endpoints.append({
+                'method': method,
+                'path': route,
+                'file': path
+            })
+
+# Generate markdown documentation
+print('# API Endpoints\n')
+for ep in sorted(endpoints, key=lambda x: x['path']):
+    print(f"- `{ep['method']} {ep['path']}` - defined in `{ep['file']}`")
+```
+
+Output:
+```markdown
+# API Endpoints
+
+- `GET /api/users` - defined in `routes/users.go`
+- `POST /api/users` - defined in `routes/users.go`
+- `GET /api/products` - defined in `routes/products.go`
+```
+
+## Code Review Automation
+
+### Example: Find Files Missing Headers
+
+```python
+import xml.etree.ElementTree as ET
+
+tree = ET.parse('project_snapshot.xml')
+root = tree.getroot()
+
+required_header = "Copyright (c) 2026"
+missing_headers = []
+
+for file in root.findall('.//file'):
+    path = file.get('path')
+    if path.endswith('.go'):  # Check Go files
+        content = file.text or ''
+        if required_header not in content:
+            missing_headers.append(path)
+
+if missing_headers:
+    print("Files missing copyright header:")
+    for path in missing_headers:
+        print(f"  - {path}")
+else:
+    print("All files have required copyright header!")
+```
+
+### Example: Detect Large Files
+
+```python
+import xml.etree.ElementTree as ET
+
+tree = ET.parse('project_snapshot.xml')
+root = tree.getroot()
+
+MAX_LINES = 500
+large_files = []
+
+for file in root.findall('.//file'):
+    path = file.get('path')
+    content = file.text or ''
+    line_count = content.count('\n')
+    
+    if line_count > MAX_LINES:
+        large_files.append((path, line_count))
+
+if large_files:
+    print(f"Files exceeding {MAX_LINES} lines:")
+    for path, lines in sorted(large_files, key=lambda x: -x[1]):
+        print(f"  - {path}: {lines} lines")
+```
+
+## Compliance and Audit Trails
+
+### Example: License Compliance Check
+
+```python
+import xml.etree.ElementTree as ET
+import re
+
+tree = ET.parse('project_snapshot.xml')
+root = tree.getroot()
+
+allowed_licenses = ['MIT', 'Apache-2.0', 'BSD-3-Clause']
+issues = []
+
+for file in root.findall('.//file'):
+    path = file.get('path')
+    if 'vendor' in path or 'node_modules' in path:
+        content = file.text or ''
+        
+        # Look for license declarations
+        license_match = re.search(r'License: ([\w.-]+)', content)
+        if license_match:
+            license_name = license_match.group(1)
+            if license_name not in allowed_licenses:
+                issues.append({
+                    'file': path,
+                    'license': license_name
+                })
+
+if issues:
+    print("License compliance issues found:")
+    for issue in issues:
+        print(f"  {issue['file']}: {issue['license']}")
+```
+
+### Example: Security Pattern Detection
+
+```python
+import xml.etree.ElementTree as ET
+import re
+
+tree = ET.parse('project_snapshot.xml')
+root = tree.getroot()
+
+# Patterns that might indicate security issues
+patterns = [
+    (r'password\s*=\s*["\'][^"\':]+["\']', 'Hardcoded password'),
+    (r'api[_-]?key\s*=\s*["\'][^"\':]+["\']', 'Hardcoded API key'),
+    (r'SELECT\s+.*FROM.*WHERE.*\+', 'Possible SQL injection'),
+]
+
+findings = []
+
+for file in root.findall('.//file'):
+    path = file.get('path')
+    content = file.text or ''
+    
+    for pattern, description in patterns:
+        matches = re.finditer(pattern, content, re.IGNORECASE)
+        for match in matches:
+            findings.append({
+                'file': path,
+                'issue': description,
+                'snippet': match.group(0)[:50]
+            })
+
+if findings:
+    print("Security concerns found:")
+    for finding in findings:
+        print(f"\n{finding['file']}:")
+        print(f"  Issue: {finding['issue']}")
+        print(f"  Snippet: {finding['snippet']}...")
+```
+
+## Integration with Other Tools
+
+### Generate Input for Static Analyzers
+
+Extract specific file types for analysis:
+
+```bash
+# Generate snapshot
+chettu -o project.xml
+
+# Extract all Go files using Python
+python extract_go_files.py project.xml
+
+# Run static analyzer on extracted files
+staticcheck ./extracted_files/...
+```
+
+`extract_go_files.py`:
+```python
+import xml.etree.ElementTree as ET
+import os
+import sys
+
+tree = ET.parse(sys.argv[1])
+root = tree.getroot()
+
+os.makedirs('extracted_files', exist_ok=True)
+
+for file in root.findall('.//file'):
+    path = file.get('path')
+    if path.endswith('.go'):
+        content = file.text or ''
+        output_path = os.path.join('extracted_files', path)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, 'w') as f:
+            # Remove indentation added by Chettu
+            f.write('\n'.join(line[1:] if line.startswith('\t') else line 
+                             for line in content.split('\n')))
+```
+
+### Integration with CI/CD
+
+Use Chettu in continuous integration pipelines:
+
+```yaml
+# .github/workflows/analysis.yml
+name: Codebase Analysis
+
+on: [push, pull_request]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install Chettu
+        run: go install github.com/saharshxyz/chettu@latest
+      
+      - name: Generate project snapshot
+        run: chettu -n "CI Build ${{ github.sha }}" -o snapshot.xml
+      
+      - name: Run custom analysis
+        run: python scripts/analyze_snapshot.py snapshot.xml
+      
+      - name: Upload snapshot artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: project-snapshot
+          path: snapshot.xml
+```
+
+## Example: Parsing XML to Extract Metrics
+
+Comprehensive metrics extraction:
+
+```python
+import xml.etree.ElementTree as ET
+from collections import defaultdict
+import os
+
+class CodebaseMetrics:
+    def __init__(self, xml_file):
+        self.tree = ET.parse(xml_file)
+        self.root = self.tree.getroot()
+        
+    def total_files(self):
+        return len(self.root.findall('.//file'))
+    
+    def total_lines(self):
+        total = 0
+        for file in self.root.findall('.//file'):
+            content = file.text or ''
+            total += content.count('\n')
+        return total
+    
+    def files_by_extension(self):
+        ext_counts = defaultdict(int)
+        for file in self.root.findall('.//file'):
+            path = file.get('path')
+            ext = os.path.splitext(path)[1]
+            ext_counts[ext] += 1
+        return dict(ext_counts)
+    
+    def lines_by_extension(self):
+        ext_lines = defaultdict(int)
+        for file in self.root.findall('.//file'):
+            path = file.get('path')
+            ext = os.path.splitext(path)[1]
+            content = file.text or ''
+            ext_lines[ext] += content.count('\n')
+        return dict(ext_lines)
+    
+    def largest_files(self, n=10):
+        file_sizes = []
+        for file in self.root.findall('.//file'):
+            path = file.get('path')
+            content = file.text or ''
+            lines = content.count('\n')
+            file_sizes.append((path, lines))
+        return sorted(file_sizes, key=lambda x: -x[1])[:n]
+    
+    def project_name(self):
+        name_elem = self.root.find('.//project_name')
+        return name_elem.text if name_elem is not None else 'Unknown'
+
+# Usage
+metrics = CodebaseMetrics('project_snapshot.xml')
+
+print(f"Project: {metrics.project_name()}")
+print(f"Total files: {metrics.total_files()}")
+print(f"Total lines: {metrics.total_lines()}")
+print(f"\nFiles by extension:")
+for ext, count in sorted(metrics.files_by_extension().items()):
+    print(f"  {ext or '(none)'}: {count}")
+print(f"\nTop 10 largest files:")
+for path, lines in metrics.largest_files():
+    print(f"  {path}: {lines} lines")
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Generate Clean Snapshots" icon="broom">
+    Use ignore flags to exclude test files and generated code for cleaner analysis:
+    ```bash
+    chettu -l "*_test.go" -l "*.gen.go" -o analysis.xml
+    ```
+  </Card>
+
+  <Card title="Handle Indentation" icon="indent">
+    Chettu indents file content with tabs. Strip the leading tab when extracting:
+    ```python
+    content = '\n'.join(
+        line[1:] if line.startswith('\t') else line
+        for line in file.text.split('\n')
+    )
+    ```
+  </Card>
+
+  <Card title="Use Streaming for Large Files" icon="stream">
+    For very large XML files, use streaming XML parsers:
+    ```python
+    import xml.etree.ElementTree as ET
+    for event, elem in ET.iterparse('large.xml'):
+        if elem.tag == 'file':
+            # Process file element
+            elem.clear()  # Free memory
+    ```
+  </Card>
+
+  <Card title="Cache Parsed Results" icon="database">
+    Parse XML once and cache results for multiple analyses:
+    ```python
+    metrics = CodebaseMetrics('snapshot.xml')
+    # Run multiple metric calculations
+    # without re-parsing
+    ```
+  </Card>
+</CardGroup>
+
+<Tip>
+The `source_tree` element contains a text-based tree visualization that's useful for quick structure overview, while the `files` element contains the actual parseable content.
+</Tip>
+
+## Example Projects
+
+Here are some ideas for tools you can build using Chettu output:
+
+- **Dependency Graph Generator** - Parse import statements to visualize dependencies
+- **Code Complexity Analyzer** - Calculate cyclomatic complexity metrics
+- **Documentation Coverage** - Check which functions lack documentation
+- **Test Coverage Mapper** - Match test files to implementation files
+- **License Aggregator** - Collect all license declarations
+- **Tech Stack Detector** - Identify all frameworks and libraries used
+- **Code Style Checker** - Enforce naming conventions and patterns
+- **Dead Code Detector** - Find unused files or functions

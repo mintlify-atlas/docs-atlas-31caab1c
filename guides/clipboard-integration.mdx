@@ -1,0 +1,298 @@
+---
+title: Clipboard Integration
+description: Copy Chettu output directly to your clipboard with configurable size limits
+---
+
+Chettu includes built-in clipboard integration, allowing you to copy project snapshots directly to your clipboard for quick pasting into LLM chats, documentation, or other tools.
+
+## How the `-c` Flag Works
+
+The `-c` (or `--copy`) flag enables clipboard copying with an optional size limit:
+
+```bash
+# Use default 50KB limit
+chettu
+
+# Set custom size limit (in bytes)
+chettu -c 100000
+
+# Disable clipboard (set to 0)
+chettu -c 0 -o output.xml
+```
+
+<Note>
+Clipboard copying is enabled by default with a 50,000 byte (50KB) limit. You only need the `-c` flag to change this limit.
+</Note>
+
+## Default Size Limit
+
+By default, Chettu limits clipboard copies to **50KB (50,000 bytes)**:
+
+```go
+var defaultConfig = Config{
+    // ...
+    MaxCopySize: 50000,  // 50KB default
+    // ...
+}
+```
+
+This prevents accidentally copying massive files to your clipboard, which can cause performance issues or crashes in some applications.
+
+### Why 50KB?
+
+The 50KB default is designed to:
+
+- Allow most small to medium projects to fit comfortably
+- Prevent clipboard overflow in applications like Slack, Discord, or chat interfaces
+- Stay within typical LLM prompt size limits (GPT-4 context windows)
+- Avoid system clipboard performance degradation
+
+<Tip>
+If you're using Chettu with LLMs, the 50KB default often fits within 10,000-15,000 tokens, leaving room for conversation context.
+</Tip>
+
+## Custom Size Limits
+
+Adjust the size limit based on your needs:
+
+```bash
+# Allow larger projects (200KB)
+chettu -c 200000
+
+# Very small limit for quick snippets (10KB)
+chettu -c 10000
+
+# Unlimited (use with caution)
+chettu -c 999999999
+
+# Disable clipboard entirely
+chettu -c 0
+```
+
+<Steps>
+  <Step title="Determine Your Project Size">
+    Run Chettu with file output to check the size:
+    ```bash
+    chettu -o test.xml -c 0
+    ls -lh test.xml
+    # -rw-r--r-- 1 user group 145K Mar 3 10:30 test.xml
+    ```
+  </Step>
+  
+  <Step title="Set Appropriate Limit">
+    Set the limit slightly above your project size:
+    ```bash
+    chettu -c 150000  # 150KB for a 145KB project
+    ```
+  </Step>
+  
+  <Step title="Verify Success">
+    Check the output message:
+    ```bash
+    # Success:
+    Output(145234 characters) copied to clipboard
+    
+    # Size exceeded:
+    Error: content size (145234) is greater than max copy size (50000)
+    ```
+  </Step>
+</Steps>
+
+## Size Limit Errors
+
+When the output exceeds your size limit, Chettu displays an error but continues execution:
+
+```bash
+chettu -c 10000
+# ./src/main.go
+# ./src/utils.go
+# ./README.md
+#
+# Error: content size (25670) is greater than max copy size (10000)
+```
+
+<Warning>
+Size limit errors go to stderr and don't stop execution. If you also specified `-o`, the file will still be written successfully.
+</Warning>
+
+### Handling Size Errors
+
+If you encounter size limit errors:
+
+1. **Increase the limit**: Use a larger `-c` value
+2. **Add ignore patterns**: Exclude unnecessary files with `-l`
+3. **Use file output instead**: Skip clipboard with `-c 0 -o output.xml`
+4. **Scan fewer directories**: Use `-d` to target specific subdirectories
+
+```bash
+# Instead of this (fails):
+chettu -c 10000
+
+# Try this (exclude docs and tests):
+chettu -c 10000 -l "docs" -l "*_test.go"
+
+# Or this (save to file instead):
+chettu -o output.xml -c 0
+```
+
+## Implementation Details
+
+The `copyToClipboard()` function (chettu.go:284-294) handles clipboard operations:
+
+```go
+func copyToClipboard(content string, maxCopySize int64) {
+    if contentSize := int64(len(content)); contentSize > maxCopySize {
+        fmt.Fprintf(os.Stderr, "\nError: content size (%d) is greater than max copy size (%d)\n", 
+            contentSize, maxCopySize)
+    } else {
+        err := clipboard.Init()
+        handleError("Error initializing clipboard", err)
+        
+        clipboard.Write(clipboard.FmtText, []byte(content))
+        fmt.Printf("\nOutput(%d characters) copied to clipboard\n", contentSize)
+    }
+}
+```
+
+<Note>
+The size check uses `len(content)` which counts bytes, not characters. For ASCII text, bytes equal characters, but for Unicode content, multi-byte characters may cause the actual character count to be lower.
+</Note>
+
+## Platform Support
+
+Chettu uses the [golang.design/x/clipboard](https://pkg.go.dev/golang.design/x/clipboard) library, which supports:
+
+- **Linux**: X11 and Wayland
+- **macOS**: Native clipboard API
+- **Windows**: Native clipboard API
+- **BSD**: X11-based systems
+
+### Linux Requirements
+
+On Linux, you may need to install clipboard dependencies:
+
+**Debian/Ubuntu:**
+```bash
+sudo apt-get install xorg-dev libx11-dev
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install libX11-devel
+```
+
+**Arch:**
+```bash
+sudo pacman -S libx11
+```
+
+<Warning>
+On headless Linux systems (no X11/Wayland), clipboard operations may fail. Use `-c 0 -o output.xml` to write to a file instead.
+</Warning>
+
+## Combining with File Output
+
+You can write to both clipboard and file simultaneously:
+
+```bash
+# Copy to clipboard AND save to file
+chettu -o snapshot.xml -c 100000
+
+# Output:
+# ./src/main.go
+# ./README.md
+# Output written to snapshot.xml
+# Output(45123 characters) copied to clipboard
+```
+
+This is useful when you want:
+
+- A persistent file copy for archival
+- Immediate clipboard access for pasting
+- Backup in case clipboard gets overwritten
+
+## Common Use Cases
+
+### Quick LLM Context
+
+```bash
+# Copy small project to clipboard for ChatGPT
+chettu -l "test" -l "dist"
+# Paste directly into chat interface
+```
+
+### Large Projects
+
+```bash
+# Save large projects to file
+chettu -o project.xml -c 0
+# Upload file to Claude or attach to email
+```
+
+### Code Reviews
+
+```bash
+# Copy specific directory for review
+chettu -d ./src/new-feature -c 100000
+# Paste into code review tool or Slack
+```
+
+### Documentation Snippets
+
+```bash
+# Small limit for just a few files
+chettu -d ./examples -c 5000
+# Paste into documentation or blog post
+```
+
+## Troubleshooting
+
+### Clipboard Not Working
+
+<AccordionGroup>
+  <Accordion title="Linux: 'clipboard init failed'">
+    Install X11 development libraries:
+    ```bash
+    sudo apt-get install xorg-dev libx11-dev
+    ```
+    
+    Or use file output instead:
+    ```bash
+    chettu -o output.xml -c 0
+    ```
+  </Accordion>
+  
+  <Accordion title="macOS: Permission Denied">
+    Grant terminal permission to access clipboard in:
+    
+    System Preferences → Security & Privacy → Privacy → Automation
+  </Accordion>
+  
+  <Accordion title="Windows: Access Denied">
+    Close any applications that may have locked the clipboard, then try again.
+  </Accordion>
+  
+  <Accordion title="WSL: Clipboard Not Available">
+    WSL may not have direct clipboard access. Use:
+    ```bash
+    chettu -o output.xml -c 0
+    cat output.xml | clip.exe  # Windows clipboard via WSL
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Size Limit Too Restrictive
+
+If you consistently hit size limits:
+
+```bash
+# Option 1: Increase limit permanently via alias
+alias chettu='chettu -c 200000'
+
+# Option 2: Exclude more patterns in .chettuignore
+echo "test/" >> .chettuignore
+echo "*.generated.go" >> .chettuignore
+
+# Option 3: Use file output for large projects
+chettu -o "$(date +%Y%m%d)_snapshot.xml" -c 0
+```

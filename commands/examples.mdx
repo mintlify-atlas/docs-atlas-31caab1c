@@ -1,0 +1,226 @@
+---
+title: 'Usage Examples'
+description: 'Real-world examples of using Chettu in different scenarios'
+---
+
+## Basic Usage
+
+### Scan current directory
+
+The simplest way to use Chettu - scans the current directory and copies output to clipboard:
+
+```bash
+chettu
+```
+
+**What happens**:
+- Scans current directory recursively
+- Applies default ignore patterns (`.git`, `.gitignore`, `.chettuignore`, binary files)
+- Prints each file path to stdout
+- Copies XML output to clipboard (up to 50,000 characters)
+
+### Generate XML output file
+
+Save the output to a file instead of (or in addition to) clipboard:
+
+```bash
+chettu -o project_snapshot.xml
+```
+
+**What happens**:
+- Scans current directory
+- Writes output to `project_snapshot.xml`
+- Prompts for confirmation if file already exists
+- Also copies to clipboard (default behavior)
+
+## Working with Multiple Directories
+
+### Scan specific directories
+
+Scan only certain parts of your project:
+
+```bash
+chettu -d ./src -d ./docs
+```
+
+**Use case**: You want to analyze only source code and documentation, excluding tests, build artifacts, and configuration files.
+
+### Scan directories with different structures
+
+```bash
+chettu -d /home/user/project1/src -d /home/user/project2/lib
+```
+
+**Use case**: Combining code from multiple projects for comparison or LLM analysis.
+
+## Custom Ignore Patterns
+
+### Ignore log files
+
+```bash
+chettu -l "*.log"
+```
+
+**What happens**:
+- All default ignore patterns still apply
+- Additionally ignores all `.log` files
+
+### Ignore multiple patterns
+
+```bash
+chettu -l "*.log" -l "dist" -l "node_modules"
+```
+
+**Use case**: Excluding generated files, dependencies, and logs from JavaScript/Node.js projects.
+
+### Use custom ignore file
+
+```bash
+chettu -f .my_custom_ignores
+```
+
+**Use case**: You have a project-specific ignore file with patterns for temporary files, build artifacts, or sensitive data.
+
+### Start fresh with only custom ignores
+
+```bash
+chettu --reset-ignore -l "*.tmp" -l "vendor"
+```
+
+**What happens**:
+- Clears all default ignore patterns
+- Only ignores `*.tmp` files and `vendor` directory
+- **Warning**: This will include `.git`, binary files, etc. unless explicitly ignored
+
+**Use case**: You need complete control over what gets included, perhaps for debugging ignore patterns.
+
+## Project Naming
+
+### Set project name
+
+```bash
+chettu -n "My Awesome Project"
+```
+
+**Output**:
+```xml
+<project project_name="My Awesome Project">
+  <file_tree>...</file_tree>
+  <file>...</file>
+</project>
+```
+
+**Use case**: When archiving multiple project snapshots or providing context to LLMs about which project is being analyzed.
+
+## File Output with Overwrite
+
+### Force file overwrite
+
+```bash
+chettu -o project_structure.xml -R
+```
+
+**What happens**:
+- Writes output to `project_structure.xml`
+- Overwrites existing file without confirmation prompt
+
+**Use case**: Automated scripts or CI/CD pipelines where prompts would cause the process to hang.
+
+### Write to specific path
+
+```bash
+chettu -o /tmp/snapshots/project-$(date +%Y%m%d).xml
+```
+
+**Use case**: Creating dated snapshots of your project in a dedicated directory.
+
+## Clipboard Integration
+
+### Increase clipboard limit
+
+```bash
+chettu -c 200000
+```
+
+**What happens**:
+- Allows copying up to 200,000 characters to clipboard
+- Useful for larger projects that exceed the 50KB default
+
+### Disable clipboard copy
+
+```bash
+chettu -c 0 -o output.xml
+```
+
+**What happens**:
+- Disables clipboard functionality entirely
+- Only writes to file
+
+**Use case**: Running on a headless server or in environments where clipboard access is unavailable.
+
+## Combined Options
+
+### Complete workflow example
+
+```bash
+chettu -n "My Project" -d /path/to/project -l "*.log" -o output.xml -c 200000
+```
+
+**What this does**:
+1. Sets project name to "My Project"
+2. Scans `/path/to/project` directory
+3. Ignores `.log` files (in addition to defaults)
+4. Writes output to `output.xml`
+5. Copies to clipboard with 200KB limit
+
+**Use case**: Comprehensive project snapshot for sharing with team or providing context to an LLM.
+
+### Multiple directories with custom ignores
+
+```bash
+chettu -d ./frontend -d ./backend -l "node_modules" -l "*.lock" -n "Full Stack App" -o fullstack.xml -R
+```
+
+**Use case**: Capturing a full-stack application structure, excluding dependencies and lock files, with automatic overwrite for CI/CD integration.
+
+### Minimal output for specific analysis
+
+```bash
+chettu --reset-ignore -d ./src -l "*.test.js" -l "*.spec.js" -n "Source Only"
+```
+
+**What happens**:
+- Clears default ignores
+- Scans only `./src`
+- Ignores test files
+- Includes everything else (even `.git` and binaries)
+
+**Use case**: When you need to analyze source code structure including unusual files that would normally be ignored.
+
+## Integration Examples
+
+### Generate snapshot before each commit (Git hook)
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+chettu -n "$(basename $PWD)" -o .snapshots/$(date +%Y%m%d-%H%M%S).xml -c 0
+```
+
+### CI/CD artifact generation
+
+```bash
+# GitHub Actions, GitLab CI, etc.
+chettu -n "$CI_PROJECT_NAME" -o artifacts/codebase-$CI_COMMIT_SHA.xml -R -c 0
+```
+
+### LLM context preparation script
+
+```bash
+#!/bin/bash
+# prepare-context.sh
+chettu -d ./src -d ./docs \
+  -l "*.test.*" -l "*.mock.*" -l "__tests__" \
+  -n "Production Code" \
+  -o llm-context.xml -c 100000
+```

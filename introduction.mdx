@@ -1,0 +1,102 @@
+---
+title: Introduction
+description: Chettu generates comprehensive XML representations of project file structures and content
+---
+
+# Welcome to Chettu
+
+Chettu (చెట్టు) is Telugu for "tree" - a fitting name for a CLI tool that captures the complete structure and content of your projects.
+
+## What is Chettu?
+
+Chettu is a command-line tool that generates comprehensive XML representations of your project's file structure and content. It recursively scans directories, respects ignore patterns, and outputs everything in a structured XML format that's perfect for programmatic analysis.
+
+<CardGroup cols={3}>
+  <Card title="LLM Context" icon="robot">
+    Provide complete project context to Large Language Models for better code understanding and generation
+  </Card>
+  <Card title="Project Archival" icon="box-archive">
+    Capture project snapshots at specific points in time for version control and documentation
+  </Card>
+  <Card title="Codebase Analysis" icon="magnifying-glass-chart">
+    Enable programmatic analysis of project structure and content using XML parsing tools
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Smart Ignore Rules" icon="filter">
+    Respects `.gitignore` and `.chettuignore` files with customizable ignore patterns
+  </Card>
+  <Card title="Flexible Output" icon="file-export">
+    Output to file, clipboard, or both with configurable size limits
+  </Card>
+  <Card title="Multi-Directory Support" icon="folder-tree">
+    Scan multiple directories in a single operation
+  </Card>
+  <Card title="Safe File Handling" icon="shield-check">
+    Overwrite confirmation prompts to prevent accidental data loss
+  </Card>
+</CardGroup>
+
+## Quick Example
+
+Generating a project snapshot is as simple as:
+
+```bash
+chettu -o project.xml
+```
+
+This scans your current directory and generates an XML file with:
+- A visual tree representation of your file structure
+- Complete contents of all non-ignored files
+- Organized, parseable XML format
+
+<Tip>
+The output is automatically copied to your clipboard (up to 50KB by default), making it easy to paste into LLM conversations or other tools.
+</Tip>
+
+## Output Structure
+
+Chettu generates clean, structured XML:
+
+```xml
+<project>
+    <project_name>My Awesome Project</project_name>
+    <source_tree>
+        .
+        ├── README.md
+        ├── src
+        │   └── main.go
+        └── docs
+            └── guide.md
+    </source_tree>
+    <files>
+        <file path="README.md">
+            # My Project
+            This is the main README file.
+        </file>
+        <file path="src/main.go">
+            package main
+
+            import "fmt"
+
+            func main() {
+                fmt.Println("Hello, World!")
+            }
+        </file>
+    </files>
+</project>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Install Chettu" icon="download" href="/installation">
+    Get Chettu installed on your system
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Learn the basics with a quick tutorial
+  </Card>
+</CardGroup>

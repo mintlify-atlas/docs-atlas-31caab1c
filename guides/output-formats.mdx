@@ -1,0 +1,313 @@
+---
+title: Output Format
+description: Understanding Chettu's XML output structure and elements
+---
+
+Chettu generates a structured XML representation of your project containing both a visual file tree and complete file contents. This format is designed to be both human-readable and machine-parseable.
+
+## XML Structure
+
+The output follows a consistent XML structure defined in the `project.tmpl` template:
+
+```xml
+<project>
+{{if .ProjectName}}
+<project_name>{{.ProjectName}}</project_name>
+{{end}}
+<source_tree>
+{{indent .FileTree}}
+</source_tree>
+
+<files>
+{{- range .Files}}
+<file path="{{.Path}}">
+{{indent .Content}}
+</file>
+{{- end}}
+</files>
+
+</project>
+```
+
+## Root Element: `<project>`
+
+The `<project>` element is the root container for all output. It encapsulates three main sections:
+
+1. **Project name** (optional)
+2. **Source tree** (visual representation)
+3. **Files** (actual file contents)
+
+```xml
+<project>
+    <!-- All content goes here -->
+</project>
+```
+
+## Optional Element: `<project_name>`
+
+When you specify a project name using the `-n` flag, it appears as the first child element:
+
+```bash
+chettu -n "My Awesome Project"
+```
+
+```xml
+<project>
+    <project_name>My Awesome Project</project_name>
+    <!-- rest of output -->
+</project>
+```
+
+<Note>
+The `<project_name>` element is only included when you explicitly provide the `-n` flag. Without it, the element is omitted entirely.
+</Note>
+
+## Element: `<source_tree>`
+
+The `<source_tree>` element contains a text-based visualization of your project's directory structure, similar to the Unix `tree` command:
+
+```xml
+<source_tree>
+    .
+    ├── README.md
+    ├── src
+    │   ├── main.go
+    │   └── utils
+    │       └── helpers.go
+    └── docs
+        └── guide.md
+</source_tree>
+```
+
+### How File Tree is Generated
+
+The `generateFileTree()` function (chettu.go:113-136) creates this visualization:
+
+```go
+func generateFileTree(paths []string) string {
+    tree := make(map[string]interface{})
+    for _, path := range paths {
+        parts := strings.Split(path, string(filepath.Separator))
+        currentLevel := tree
+        for i, part := range parts {
+            if part == "." {
+                continue
+            }
+            if i == len(parts)-1 {
+                currentLevel[part] = nil  // File
+            } else {
+                if _, ok := currentLevel[part]; !ok {
+                    currentLevel[part] = make(map[string]interface{})
+                }
+                currentLevel = currentLevel[part].(map[string]interface{})
+            }
+        }
+    }
+    
+    var builder strings.Builder
+    builder.WriteString(".\n")
+    printTree(&builder, tree, "")
+    return builder.String()
+}
+```
+
+<Tip>
+The tree uses Unicode box-drawing characters (`├──`, `└──`, `│`) for clean visual hierarchy. Directories are sorted alphabetically at each level.
+</Tip>
+
+## Element: `<files>`
+
+The `<files>` section contains individual `<file>` elements for each file in your project:
+
+```xml
+<files>
+    <file path="README.md">
+        # My Project
+        This is the main README file.
+    </file>
+    <file path="src/main.go">
+        package main
+
+        import "fmt"
+
+        func main() {
+            fmt.Println("Hello, World!")
+        }
+    </file>
+</files>
+```
+
+### File Element Structure
+
+Each `<file>` element has:
+
+- **`path` attribute**: Relative path to the file from the scan root
+- **Text content**: The complete file contents, indented with one tab character per line
+
+<Note>
+All file content is automatically indented by one tab character to maintain proper XML formatting while preserving the original file structure.
+</Note>
+
+## Complete Example
+
+Here's a real example from the Chettu README (lines 88-119):
+
+```xml
+<project>
+    <project_name>My Awesome Project</project_name>
+    <source_tree>
+        .
+        ├── README.md
+        ├── src
+        │   └── main.go
+        └── docs
+            └── guide.md
+    </source_tree>
+    <files>
+        <file path="README.md">
+            # My Project
+            This is the main README file.
+        </file>
+        <file path="src/main.go">
+            package main
+
+            import "fmt"
+
+            func main() {
+                fmt.Println("Hello, World!")
+            }
+        </file>
+        <file path="docs/guide.md">
+            ## Guide
+            This is a guide for using My Project.
+        </file>
+    </files>
+</project>
+```
+
+## Output Destinations
+
+Chettu can output to multiple destinations simultaneously:
+
+<Steps>
+  <Step title="Clipboard (Default)">
+    By default, output is copied to clipboard with a 50KB limit:
+    ```bash
+    chettu
+    # Output(1234 characters) copied to clipboard
+    ```
+  </Step>
+  
+  <Step title="File Output">
+    Save to a file using the `-o` flag:
+    ```bash
+    chettu -o snapshot.xml
+    # Output written to snapshot.xml
+    ```
+  </Step>
+  
+  <Step title="Both Destinations">
+    Output to both clipboard and file:
+    ```bash
+    chettu -o snapshot.xml -c 100000
+    # Output written to snapshot.xml
+    # Output(1234 characters) copied to clipboard
+    ```
+  </Step>
+  
+  <Step title="Disable Clipboard">
+    Set clipboard size to 0 to disable:
+    ```bash
+    chettu -o snapshot.xml -c 0
+    # Output written to snapshot.xml
+    # (no clipboard message)
+    ```
+  </Step>
+</Steps>
+
+## Content Indentation
+
+All content within XML elements is indented using tab characters to maintain clean formatting:
+
+```xml
+<file path="example.go">
+	package main
+	
+	func example() {
+		return "indented"
+	}
+</file>
+```
+
+The `indent` template function (chettu.go:256-264) adds a tab prefix to every non-empty line:
+
+```go
+func indentContent(content, indent string) string {
+    lines := strings.Split(content, "\n")
+    for i, line := range lines {
+        if line != "" {
+            lines[i] = indent + line
+        }
+    }
+    return strings.Join(lines, "\n")
+}
+```
+
+<Warning>
+Empty lines are preserved but not indented, maintaining the original file's vertical spacing.
+</Warning>
+
+## Parsing the Output
+
+The XML structure is designed to be easily parsed by standard XML libraries:
+
+### Go Example
+
+```go
+type Project struct {
+    XMLName     xml.Name `xml:"project"`
+    ProjectName string   `xml:"project_name,attr,omitempty"`
+    FileTree    string   `xml:"file_tree"`
+    Files       []File   `xml:"file"`
+}
+
+type File struct {
+    Path    string `xml:"file_path"`
+    Content string `xml:"file_content"`
+}
+```
+
+### Python Example
+
+```python
+import xml.etree.ElementTree as ET
+
+tree = ET.parse('snapshot.xml')
+root = tree.getroot()
+
+project_name = root.find('project_name').text
+for file in root.findall('.//file'):
+    path = file.get('path')
+    content = file.text
+    print(f"File: {path}")
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="LLM Context" icon="robot">
+    Provide complete project context to language models for code generation, review, or analysis.
+  </Card>
+  
+  <Card title="Documentation" icon="book">
+    Generate snapshots of specific versions for documentation or archival purposes.
+  </Card>
+  
+  <Card title="Code Analysis" icon="magnifying-glass">
+    Feed structured project data into static analysis tools or custom scripts.
+  </Card>
+  
+  <Card title="Project Transfer" icon="share">
+    Share complete project structure and code in a single, portable XML file.
+  </Card>
+</CardGroup>
