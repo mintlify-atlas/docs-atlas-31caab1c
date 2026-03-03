@@ -266,14 +266,14 @@ The XML structure is designed to be easily parsed by standard XML libraries:
 ```go
 type Project struct {
     XMLName     xml.Name `xml:"project"`
-    ProjectName string   `xml:"project_name,attr,omitempty"`
-    FileTree    string   `xml:"file_tree"`
-    Files       []File   `xml:"file"`
+    ProjectName string   `xml:"project_name"`
+    FileTree    string   `xml:"source_tree"`
+    Files       []File   `xml:"files>file"`
 }
 
 type File struct {
-    Path    string `xml:"file_path"`
-    Content string `xml:"file_content"`
+    Path    string `xml:"path,attr"`
+    Content string `xml:",chardata"`
 }
 ```
 
